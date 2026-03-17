@@ -23,10 +23,20 @@ export class AndroidLogExtractor {
   }
 
   /**
-   * Executes logcat via the ADB executor and returns raw output.
-   * @param sessionId - BrowserStack session ID
+   * Executes logcat for the given session.
+   * When BrowserStack credentials are configured the device logs are fetched
+   * via the BrowserStack App Automate REST API so that no local ADB connection
+   * is required.  Falls back to local ADB otherwise (useful for physical
+   * devices connected to the host running the agent).
+   * @param sessionId - BrowserStack session ID (or local ADB session)
    */
   async executeLogcat(sessionId: string): Promise<string> {
+    const { getConfig } = await import('../config');
+    const config = getConfig();
+    if (config.browserstack.username && config.browserstack.accessKey) {
+      const { getDeviceLogs } = await import('../utils/browserstack-api');
+      return getDeviceLogs(sessionId);
+    }
     const { AdbExecutor } = await import('../utils/adb-executor');
     const adb = new AdbExecutor();
     return adb.execute(sessionId, 'logcat -d -v time UBA:V *:S');

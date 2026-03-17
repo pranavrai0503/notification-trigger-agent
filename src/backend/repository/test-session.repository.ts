@@ -20,9 +20,21 @@ function getPool(): Pool {
 }
 
 /**
+ * Interface satisfied by both the real TestSessionRepository and test doubles
+ * so that routes can accept either via dependency injection.
+ */
+export interface ITestSessionRepository {
+  create(session: TestSession): Promise<TestSession>;
+  findById(id: string): Promise<TestSession | null>;
+  update(session: TestSession): Promise<TestSession>;
+  findRecent(limit?: number): Promise<TestSession[]>;
+  delete(id: string): Promise<void>;
+}
+
+/**
  * Repository for TestSession persistence operations.
  */
-export class TestSessionRepository {
+export class TestSessionRepository implements ITestSessionRepository {
   /**
    * Persists a new TestSession record.
    * @param session - TestSession to insert

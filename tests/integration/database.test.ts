@@ -143,3 +143,97 @@ describe('TestSessionRepository', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// LogRepository
+// ---------------------------------------------------------------------------
+
+import { LogRepository } from '../../src/backend/repository/log.repository';
+
+describe('LogRepository', () => {
+  let logRepo: LogRepository;
+
+  const sampleEntry = {
+    eventName: 'PUSH_RECEIVED',
+    platform: 'android',
+    userId: 'user42',
+    referrer: 'notification',
+    timestamp: '2024-03-15T10:23:45.000Z',
+    raw: 'raw log line',
+    payload: { event: 'PUSH_RECEIVED' },
+  };
+
+  beforeEach(() => {
+    mockPoolQuery.mockReset();
+    logRepo = new LogRepository();
+  });
+
+  it('instantiates without throwing', () => {
+    expect(logRepo).toBeDefined();
+  });
+
+  describe('append()', () => {
+    it('does not call pool.query when entries array is empty', async () => {
+      await logRepo.append('sess-001', []);
+      expect(mockPoolQuery).not.toHaveBeenCalled();
+    });
+
+    it('calls pool.query with INSERT for each entry', async () => {
+      mockPoolQuery.mockResolvedValue({ rows: [] });
+
+      await logRepo.append('sess-001', [sampleEntry, sampleEntry]);
+      expect(mockPoolQuery).toHaveBeenCalledTimes(2);
+      const sql: string = mockPoolQuery.mock.calls[0][0];
+      expect(sql.toUpperCase()).toContain('INSERT');
+    });
+
+    it('handles entries without optional fields gracefully', async () => {
+      mockPoolQuery.mockResolvedValue({ rows: [] });
+      await expect(
+        logRepo.append('sess-002', [{ eventName: 'CLICK' }])
+      ).resolves.not.toThrow();
+      expect(mockPoolQuery).toHaveBeenCalledTimes(1);
+    });
+
+    it('handles invalid timestamp string without throwing', async () => {
+      mockPoolQuery.mockResolvedValue({ rows: [] });
+      await expect(
+        logRepo.append('sess-003', [{ eventName: 'EV', timestamp: 'not-a-date' }])
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('findAll()', () => {
+    it('returns empty array when no logs exist', async () => {
+      mockPoolQuery.mockResolvedValue({ rows: [] });
+      const logs = await logRepo.findAll('sess-empty');
+      expect(logs).toHaveLength(0);
+      const sql: string = mockPoolQuery.mock.calls[0][0];
+      expect(sql.toUpperCase()).toContain('SELECT');
+    });
+
+    it('returns payload objects for matching rows', async () => {
+      mockPoolQuery.mockResolvedValue({
+        rows: [{ payload: sampleEntry }, { payload: { ...sampleEntry, eventName: 'CLICK' } }],
+      });
+      const logs = await logRepo.findAll('sess-001');
+      expect(logs).toHaveLength(2);
+    });
+  });
+
+  describe('findByEvent()', () => {
+    it('calls pool.query with event_name filter', async () => {
+      mockPoolQuery.mockResolvedValue({ rows: [{ payload: sampleEntry }] });
+      const logs = await logRepo.findByEvent('sess-001', 'PUSH_RECEIVED');
+      expect(logs).toHaveLength(1);
+      const sql: string = mockPoolQuery.mock.calls[0][0];
+      expect(sql).toContain('event_name');
+    });
+
+    it('returns empty array when no matching event', async () => {
+      mockPoolQuery.mockResolvedValue({ rows: [] });
+      const logs = await logRepo.findByEvent('sess-001', 'NO_MATCH');
+      expect(logs).toHaveLength(0);
+    });
+  });
+});
+
