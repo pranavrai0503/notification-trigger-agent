@@ -1,36 +1,49 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { TestOrchestrator } from '../services/test-orchestrator';
-import { TestConfig } from '../types/test-session';
+import { TestConfig, TestSession, TestStatus } from '../types/test-session';
 
 const router = Router();
 const orchestrator = new TestOrchestrator();
 
 // In-memory store for demo; replace with DB repository in production
-const sessions: Map<string, Awaited<ReturnType<TestOrchestrator['runTest']>>> = new Map();
+const sessions: Map<string, TestSession> = new Map();
 
 /**
  * POST /api/tests/start
- * Starts a new test session.
+ * Starts a new test session asynchronously and returns the session ID immediately.
  */
 router.post(
   '/start',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const config = req.body as TestConfig;
-      // Run async, return immediately with session id
-      const sessionPromise = orchestrator.runTest(config);
-      // Grab id before the run completes
-      const partialSession = await Promise.race([
-        sessionPromise,
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 100)),
-      ]).catch(() => null);
+      const sessionId = uuidv4();
 
-      if (partialSession) {
-        sessions.set(partialSession.id, partialSession);
-        res.status(202).json({ sessionId: partialSession.id, status: partialSession.status });
-      } else {
-        res.status(202).json({ message: 'Test session started' });
-      }
+      // Store a pending session immediately so callers can poll for status
+      const pendingSession: TestSession = {
+        id: sessionId,
+        config,
+        status: TestStatus.PENDING,
+        phases: [],
+        createdAt: new Date(),
+        screenshots: [],
+      };
+      sessions.set(sessionId, pendingSession);
+
+      // Run the test asynchronously; update the store when it completes
+      orchestrator.runTest(config, sessionId).then((completedSession) => {
+        sessions.set(completedSession.id, completedSession);
+      }).catch(() => {
+        // runTest handles all errors internally and returns the FAILED session,
+        // so this catch only fires on truly unexpected rejections.
+        const existing = sessions.get(sessionId);
+        if (existing) {
+          sessions.set(sessionId, { ...existing, status: TestStatus.FAILED });
+        }
+      });
+
+      res.status(202).json({ sessionId, status: TestStatus.PENDING });
     } catch (error) {
       next(error);
     }
