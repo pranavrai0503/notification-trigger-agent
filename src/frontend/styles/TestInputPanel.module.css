@@ -1,0 +1,169 @@
+.panel {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 28px 32px;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 24px;
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 12px;
+}
+
+.fieldGroup {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #111827;
+  background: #f9fafb;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background: #fff;
+}
+
+.textarea {
+  resize: vertical;
+  font-family: 'Courier New', monospace;
+}
+
+.inputError {
+  border-color: #ef4444;
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.errorText {
+  display: block;
+  color: #dc2626;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.helpText {
+  display: block;
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.extractedParams {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.paramList {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  font-size: 0.8rem;
+}
+
+.paramList dt {
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.paramList dd {
+  color: #0c4a6e;
+  overflow: hidden;
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.radioGroup,
+.checkboxGroup {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.radioLabel,
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.radioLabel input,
+.checkboxLabel input {
+  accent-color: #6366f1;
+  width: 16px;
+  height: 16px;
+}
+
+.submitButton {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  margin-top: 8px;
+}
+
+.submitButton:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.submitButton:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
