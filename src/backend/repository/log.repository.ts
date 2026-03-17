@@ -46,6 +46,12 @@ export class LogRepository implements ILogRepository {
   async append(sessionId: string, entries: unknown[]): Promise<void> {
     if (entries.length === 0) return;
     const db = getPool();
+
+    // Build a single multi-row INSERT to avoid N round-trips to the database.
+    const valuePlaceholders: string[] = [];
+    const params: unknown[] = [];
+    let paramIndex = 1;
+
     for (const entry of entries) {
       const e = entry as Record<string, unknown>;
       const eventName = typeof e['eventName'] === 'string' ? e['eventName'] : '';
@@ -68,22 +74,19 @@ export class LogRepository implements ILogRepository {
         timestamp = new Date();
       }
 
-      await db.query(
-        `INSERT INTO logs
-           (session_id, platform, event_name, user_id, referrer, payload, raw, timestamp)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-        [
-          sessionId,
-          platform,
-          eventName,
-          userId,
-          referrer,
-          JSON.stringify(entry),
-          raw,
-          timestamp,
-        ]
+      valuePlaceholders.push(
+        `($${paramIndex},$${paramIndex + 1},$${paramIndex + 2},$${paramIndex + 3},$${paramIndex + 4},$${paramIndex + 5},$${paramIndex + 6},$${paramIndex + 7})`
       );
+      params.push(sessionId, platform, eventName, userId, referrer, JSON.stringify(entry), raw, timestamp);
+      paramIndex += 8;
     }
+
+    await db.query(
+      `INSERT INTO logs
+         (session_id, platform, event_name, user_id, referrer, payload, raw, timestamp)
+       VALUES ${valuePlaceholders.join(', ')}`,
+      params
+    );
   }
 
   /**

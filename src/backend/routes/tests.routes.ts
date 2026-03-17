@@ -45,13 +45,18 @@ export function createTestsRouter(
         // Persist the pending session immediately so callers can poll for status
         await sessionRepo.create(pendingSession);
 
-        // Run the test asynchronously; persist the result when complete
+        // Run the test asynchronously; persist the result when complete.
+        // Update failures are logged so they can be investigated without
+        // crashing the HTTP response cycle.
         orchestrator.runTest(config, sessionId).then((completedSession) => {
           return sessionRepo.update(completedSession);
-        }).catch(() => {
+        }).catch((err: unknown) => {
           // runTest handles all errors internally and returns the FAILED session.
           // This catch only fires on truly unexpected rejections – mark as failed.
-          return sessionRepo.update({ ...pendingSession, status: TestStatus.FAILED });
+          console.error(`[tests.routes] failed to complete session ${sessionId}:`, err);
+          return sessionRepo.update({ ...pendingSession, status: TestStatus.FAILED }).catch((updateErr: unknown) => {
+            console.error(`[tests.routes] failed to persist FAILED status for session ${sessionId}:`, updateErr);
+          });
         });
 
         res.status(202).json({ sessionId, status: TestStatus.PENDING });

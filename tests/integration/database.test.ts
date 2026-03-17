@@ -177,11 +177,12 @@ describe('LogRepository', () => {
       expect(mockPoolQuery).not.toHaveBeenCalled();
     });
 
-    it('calls pool.query with INSERT for each entry', async () => {
+    it('calls pool.query with a single batched INSERT for multiple entries', async () => {
       mockPoolQuery.mockResolvedValue({ rows: [] });
 
       await logRepo.append('sess-001', [sampleEntry, sampleEntry]);
-      expect(mockPoolQuery).toHaveBeenCalledTimes(2);
+      // Batched: one query for all entries
+      expect(mockPoolQuery).toHaveBeenCalledTimes(1);
       const sql: string = mockPoolQuery.mock.calls[0][0];
       expect(sql.toUpperCase()).toContain('INSERT');
     });
