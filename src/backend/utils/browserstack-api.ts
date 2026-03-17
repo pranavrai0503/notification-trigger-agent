@@ -38,11 +38,16 @@ export async function getSessionDetails(sessionId: string): Promise<unknown> {
 }
 
 /**
- * Marks a session with a custom status and reason.
- * @param sessionId - BrowserStack session identifier
- * @param status - 'passed' or 'failed'
- * @param reason - Human-readable reason
+ * Fetches device logs (logcat) for an App Automate session.
+ * @param sessionId - BrowserStack App Automate session identifier
  */
+export async function getDeviceLogs(sessionId: string): Promise<string> {
+  const client = createBrowserStackClient();
+  const response = await client.get<string>(
+    `/app-automate/sessions/${sessionId}/devicelogs`
+  );
+  return typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+}
 export async function markSessionStatus(
   sessionId: string,
   status: 'passed' | 'failed',

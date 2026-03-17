@@ -2,9 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import { curlRoutes } from './routes/curl.routes';
-import { testsRoutes } from './routes/tests.routes';
-import { logsRoutes } from './routes/logs.routes';
+import curlRoutes from './routes/curl.routes';
+import testsRoutes from './routes/tests.routes';
+import logsRoutes from './routes/logs.routes';
 import { errorHandler } from './middleware/error-handler';
 
 dotenv.config();
