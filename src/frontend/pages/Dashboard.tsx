@@ -3,14 +3,15 @@ import TestInputPanel from '../components/TestInputPanel';
 import ResultsPanel from '../components/ResultsPanel';
 import LogViewer from '../components/LogViewer';
 import { apiService } from '../services/api-service';
-import { TestSession } from '../../backend/types/test-session';
+import { TestSession, TestStatus } from '../../backend/types/test-session';
+import { TestFormData } from '../components/TestInputPanel';
 
 const Dashboard: React.FC = () => {
   const [session, setSession] = useState<TestSession | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStart = async (formData: Record<string, unknown>) => {
+  const handleStart = async (formData: TestFormData) => {
     setLoading(true);
     setError(null);
     try {
@@ -24,10 +25,16 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!session || session.status === 'completed' || session.status === 'failed') return;
+    if (
+      !session ||
+      session.status === TestStatus.PASSED ||
+      session.status === TestStatus.FAILED ||
+      session.status === TestStatus.ABORTED
+    )
+      return;
     const interval = setInterval(async () => {
       try {
-        const updated = await apiService.getTestStatus(session.id);
+        const updated = await apiService.getTestSession(session.id);
         setSession(updated);
       } catch {
         clearInterval(interval);
@@ -43,11 +50,24 @@ const Dashboard: React.FC = () => {
       </header>
       <main className="dashboard-main">
         <section className="dashboard-left">
-          <TestInputPanel onSubmit={handleStart} loading={loading} />
+          <TestInputPanel onSubmit={handleStart} isLoading={loading} />
         </section>
         <section className="dashboard-right">
           {error && <div className="error-banner">{error}</div>}
-          {session && <ResultsPanel session={session} />}
+          {session && (
+            <ResultsPanel
+              sessionId={session.id}
+              status={session.status}
+              phases={(session.phases ?? []).map((p) => ({
+                phase: p.phase,
+                status: p.status,
+                durationMs: p.durationMs ?? 0,
+                error: p.error,
+              }))}
+              progress={loading ? 50 : 100}
+              isLoading={loading}
+            />
+          )}
           {session && <LogViewer sessionId={session.id} />}
         </section>
       </main>

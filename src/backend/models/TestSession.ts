@@ -1,10 +1,10 @@
-import { TestSession, TestStatus } from '../types/test-session';
+import { TestConfig, TestSession, TestStatus } from '../types/test-session';
 
 /** Database row representation of a TestSession. */
 export interface TestSessionRow {
   id: string;
   status: string;
-  config: Record<string, unknown>;
+  config: TestConfig;
   phases: unknown[];
   screenshots: string[];
   android_session_id: string | null;
@@ -21,7 +21,7 @@ export function rowToTestSession(row: TestSessionRow): TestSession {
   return {
     id: row.id,
     status: row.status as TestStatus,
-    config: row.config as TestSession['config'],
+    config: row.config,
     phases: row.phases as TestSession['phases'],
     screenshots: row.screenshots,
     androidSessionId: row.android_session_id ?? undefined,
